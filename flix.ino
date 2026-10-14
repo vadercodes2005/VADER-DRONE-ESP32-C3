@@ -1,0 +1,46 @@
+// Copyright (c) 2023 Oleg Kalachev <okalachev@gmail.com>
+// Repository: https://github.com/okalachev/flix
+
+// Main firmware file
+
+#include "vector.h"
+#include "quaternion.h"
+#include "util.h"
+
+extern float t, dt;
+extern float controlRoll, controlPitch, controlYaw, controlThrottle, controlMode;
+extern Vector gyro, acc;
+extern Vector rates;
+extern Quaternion attitude;
+extern bool landed;
+extern float motors[4];
+
+void setup() {
+	Serial.begin(115200);
+	print("Initializing flix\n");
+	setupParameters();
+	setupPower();
+	setupLED();
+	setupMotors();
+	setupWiFi();
+	setupIMU();
+	setupLaser();     // <--- BOOT THE LASER
+	setupRC();
+	print("Initializing complete\n");
+}
+
+void loop() {
+	readIMU();
+	readLaser();      // <--- READ THE LASER (Non-blocking)
+	step();
+	readRC();
+	estimate();
+	control();
+	sendMotors();
+	handleInput();
+	processMavlink();
+	readVoltage();
+	logData();
+	syncParameters();
+	loopLED();
+}
